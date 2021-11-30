@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+    <h1>Below is a sample implementation of Calculating numbers leveraging channels layer so that the results persist in different tabs.</h1>
+    <br>
+    <br>
+    <h5>Enter 2 values to calculate their sum and get their result back from websockets</h5>
+    <br>
+    <br>
+    <br>
+    <div class="d-flex flex-column justify-content-center">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="type">Select Websocket Type</label>
+            </div>
+
+            <select class="custom-select" name="type" id="type">
+                <option selected>Choose..</option>
+                <option value="regular">WebsocketConsumer</option>
+                <option value="json">JsonWebsocketConsumer</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="num_1">Enter First Number</label>
+            <input type="number" id="num_1" name="num_1" class="form-control" ><br><br>
+        </div>
+
+        <div class="form-group">
+            <label for="num_2">Enter Last Number</label>
+            <input type="number" id="num_2" name="num_2" class="form-control" ><br><br>
+        </div>
+
+        <div class="text-center">
+            <input type="submit" value="Submit" id="submit" class="btn btn-outline-success">
+        </div>
+
+        <br>
+        <br>
+
+        <div class="form-group">
+            <label for="result_1">Result</label>
+            <input type="number" id="result_1" name="result_1" class="form-control" readonly><br><br>
+        </div>
+    </div>
+
+
+{% endblock content %}
+
+{% block inline_javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+
+        function createWebSocket(url) {
+
+            ws = new WebSocket('ws://' + window.location.host + url)
+
+            ws.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                const num_1 = data["message"]["num_1"]
+                const num_2 = data["message"]["num_2"]
+                const result = data["message"]["result"]
+
+                // update results from the wss for displaying to the user
+                document.querySelector("#result_1").value = result
+                document.querySelector("#num_1").value = num_1
+                document.querySelector("#num_2").value = num_2
+            }
+
+            ws.onclose = function(e) {
+                console.error("Chat Socket closed")
+            };
+
+        };
+
+
+        document.querySelector("#type").addEventListener("change", function() {
+            var selected_value = this.value
+            console.log(selected_value)
+            if (selected_value == "json") {
+                createWebSocket("/ws/calculate-json/")
+            }
+            else {
+                createWebSocket("/ws/calculate/")
+            }
+        });
+
+
+        document.querySelector("#submit").addEventListener("click", function() {
+
+            console.log("Submit button clicked");
+
+            // get the 2 numbers
+            var num_1 = document.querySelector("#num_1");
+            var num_2 = document.querySelector("#num_2");
+
+            // send the numbers to the backend for calculation
+            ws.send(JSON.stringify({
+                "num_1": num_1.value,
+                "num_2": num_2.value,
+            }))
+
+
+        });
+
+
+    </script>
+{% endblock inline_javascript %}
